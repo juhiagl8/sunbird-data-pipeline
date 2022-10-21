@@ -33,6 +33,8 @@
 		<module>cb-preprocessor</module>
 		<module>assessment-submit</module>
 		<module>rating</module>
+		<module>IncompleteCourseEmail</module>
+		<module>LatestCourseReminder</module>
 	</modules>
 
 	<properties>
