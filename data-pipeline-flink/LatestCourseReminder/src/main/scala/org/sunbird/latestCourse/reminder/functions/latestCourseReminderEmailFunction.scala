@@ -7,6 +7,8 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.ProcessFunction
+import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
+import org.apache.kafka.common.serialization.StringSerializer
 import org.slf4j.LoggerFactory
 import org.sunbird.dp.contentupdater.core.util.RestUtil
 import org.sunbird.dp.core.cache.{DataCache, RedisConnect}
@@ -16,11 +18,10 @@ import org.sunbird.latestCourse.reminder.domain.Event
 import org.sunbird.latestCourse.reminder.task.LatestCourseReminderEmailConfig
 import org.sunbird.latestCourse.reminder.util.RestApiUtil
 
-
 import java.time.LocalDate
 import java.util
 import java.util.concurrent.CompletableFuture
-import java.util.{Arrays, Collections, Date}
+import java.util.{Arrays, Collections, Date, Properties}
 
 
 class latestCourseReminderEmailFunction(config: LatestCourseReminderEmailConfig,
@@ -340,6 +341,19 @@ class latestCourseReminderEmailFunction(config: LatestCourseReminderEmailConfig,
             }
           }
         }
+        val kafkaProducerProps=new Properties()
+        kafkaProducerProps.put("bootstrap.servers",config.BOOTSTRAP_SERVER_CONFIG)
+        kafkaProducerProps.put("key.serializer",classOf[StringSerializer].getName)
+        kafkaProducerProps.put("value.serializer",classOf[StringSerializer].getName)
+        val producer=new KafkaProducer[String,String](kafkaProducerProps)
+        val producerData=new util.HashMap[String,Any]
+        producerData.put(config.EMAILS,emails)
+        producerData.put(config.PARAMS,params)
+        producerData.put(config.emailTemplate,config.NEW_COURSES)
+        producerData.put(config.emailSubject,config.NEW_COURSES_MAIL_SUBJECT)
+        producer.send(new ProducerRecord[String,String](config.kafkaOutPutStreamTopic,config.DATA,producerData.toString))
+        /*producer.flush()
+        producer.close()*/
         /* CompletableFuture.runAsync(()=>{
            //sendNotification(emails,params,config.SENDER_MAIL,config.notification_service_host+config.notification_event_endpoint,config.NEW_COURSES,config.NEW_COURSES_MAIL_SUBJECT)
          })*/

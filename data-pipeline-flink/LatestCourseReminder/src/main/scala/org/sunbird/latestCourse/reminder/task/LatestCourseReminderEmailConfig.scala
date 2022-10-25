@@ -19,6 +19,8 @@ class LatestCourseReminderEmailConfig(override val config: Config) extends BaseJ
   val latestCourseParallelism: Int = config.getInt("task.latest.course.parallelism")
   val kafkaIssueTopic: String = config.getString("kafka.output.topic")
   val kafkaSuccessTopic: String = config.getString("kafka.success.topic")
+  val kafkaOutPutStreamTopic: String = config.getString("kafka.streaming.topic")
+  val BOOTSTRAP_SERVER_CONFIG:String=config.getString("kafka.bootstrap_server")
 
   val issueEventSink = "incomplete-course-email-issue-event-sink"
   val successIssueEventSink = "success-incompletecourse-issue-event-sink"
@@ -95,6 +97,8 @@ class LatestCourseReminderEmailConfig(override val config: Config) extends BaseJ
   val NEW_COURSES_MAIL_SUBJECT = "Check out exciting new courses that launched this week!"
   val NOTIFICATIONS = "notifications"
   val EMAIL = "email"
+  val EMAILS = "emails"
+  val PARAMS = "params"
   val MESSAGE="message";
   val CONTENT_TYPE = "Content-Type"
   val AUTHORIZATION = "authorization"
@@ -116,6 +120,9 @@ class LatestCourseReminderEmailConfig(override val config: Config) extends BaseJ
   val PRIMARY_EMAIL = "primaryEmail"
   val latest_courses_alert_content_min_limit=1
   val latest_courses_alert_send_to_all_user:Boolean=config.getBoolean("const.latest_courses_alert_send_to_all_user")
+  val DATA="data"
+  val emailTemplate="emailTemplate"
+  val emailSubject="emailSubject"
 
   // Consumers
   val LatestCourseReminderEmailConsumer = "latest-course-reminder-email-consumer"

@@ -19,6 +19,8 @@ class IncompleteCourseEmailConfig(override val config: Config) extends BaseJobCo
   val ratingParallelism: Int = config.getInt("task.rating.parallelism")
   val kafkaIssueTopic: String = config.getString("kafka.output.topic")
   val kafkaSuccessTopic: String = config.getString("kafka.success.topic")
+  val BOOTSTRAP_SERVER_CONFIG: String = config.getString("kafka.bootstrap_server")
+  val kafkaOutPutStreamTopic: String = config.getString("kafka.streaming.topic")
 
   val issueEventSink = "incomplete-course-email-issue-event-sink"
   val successIssueEventSink = "success-incompletecourse-issue-event-sink"
@@ -59,6 +61,8 @@ class IncompleteCourseEmailConfig(override val config: Config) extends BaseJobCo
   val NOTIFICATION_HOST :String=config.getString( "url.notification_service_host")
   val sender_mail : String=config.getString("mail.sender_mail")
   val notification_event_endpoint : String=config.getString("mail.notification_event_endpoint")
+
+
   val last_access_time_gap_millis=259200000
 
   val courseid ="courseid"
@@ -85,7 +89,11 @@ class IncompleteCourseEmailConfig(override val config: Config) extends BaseJobCo
   val MESSAGE="message";
   val NOTIFICATIONS = "notifications"
   val REQUEST = "request"
-
+  val EMAILS = "emails"
+  val PARAMS = "params"
+  val DATA = "data"
+  val emailTemplate = "emailTemplate"
+  val emailSubject = "emailSubject"
   // Consumers
   val IncompleteCourseEmailConsumer = "incomplete-course-email-consumer"
 

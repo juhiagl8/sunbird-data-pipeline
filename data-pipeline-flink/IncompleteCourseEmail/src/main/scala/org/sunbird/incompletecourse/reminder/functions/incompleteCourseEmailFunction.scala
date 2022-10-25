@@ -8,6 +8,8 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.ProcessFunction
+import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
+import org.apache.kafka.common.serialization.StringSerializer
 import org.slf4j.LoggerFactory
 import org.sunbird.dp.contentupdater.core.util.RestUtil
 import org.sunbird.dp.core.cache.{DataCache, RedisConnect}
@@ -18,7 +20,7 @@ import org.sunbird.incompletecourse.reminder.task.IncompleteCourseEmailConfig
 import org.sunbird.incompletecourse.reminder.util.RestApiUtil
 
 import java.util
-import java.util.{Date, Map}
+import java.util.{Date, Map, Properties}
 
 
 
@@ -254,7 +256,19 @@ class incompleteCourseEmailFunction(config: IncompleteCourseEmailConfig,
             params.put(config.COURSE_KEYWORD + j +config._NAME, userCourseProgressDetailsEntry.getValue.incompleteCourses.get(i).courseName)
             params.put(config.COURSE_KEYWORD + j +config._DURATION, userCourseProgressDetailsEntry.getValue.incompleteCourses.get(i).completionPercentage)
           }
-          sendNotification(java.util.Collections.singletonList(userCourseProgressDetailsEntry.getValue.email), params, config.sender_mail, config.NOTIFICATION_HOST + config.notification_event_endpoint, config.INCOMPLETE_COURSES, config.INCOMPLETE_COURSES_MAIL_SUBJECT)
+          val kafkaProducerProps = new Properties()
+          kafkaProducerProps.put("bootstrap.servers", config.BOOTSTRAP_SERVER_CONFIG)
+          kafkaProducerProps.put("key.serializer", classOf[StringSerializer].getName)
+          kafkaProducerProps.put("value.serializer", classOf[StringSerializer].getName)
+          val producer = new KafkaProducer[String, String](kafkaProducerProps)
+          val producerData = new util.HashMap[String, Any]
+          producerData.put(config.EMAILS, userCourseProgressDetailsEntry.getValue.email)
+          producerData.put(config.PARAMS, params)
+          producerData.put(config.emailTemplate, config.INCOMPLETE_COURSES)
+          producerData.put(config.emailSubject, config.INCOMPLETE_COURSES_MAIL_SUBJECT)
+          producerData.put("senderMail",config.sender_mail)
+          producer.send(new ProducerRecord[String, String](config.kafkaOutPutStreamTopic, config.DATA, producerData.toString))
+          //sendNotification(java.util.Collections.singletonList(userCourseProgressDetailsEntry.getValue.email), params, config.sender_mail, config.NOTIFICATION_HOST + config.notification_event_endpoint, config.INCOMPLETE_COURSES, config.INCOMPLETE_COURSES_MAIL_SUBJECT)
           set.remove(userCourseProgressDetailsEntry)
         }
       } catch {
