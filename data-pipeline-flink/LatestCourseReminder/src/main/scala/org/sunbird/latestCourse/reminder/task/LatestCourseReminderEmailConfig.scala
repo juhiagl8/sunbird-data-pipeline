@@ -123,6 +123,13 @@ class LatestCourseReminderEmailConfig(override val config: Config) extends BaseJ
   val DATA="data"
   val emailTemplate="emailTemplate"
   val emailSubject="emailSubject"
+  val fields="profileDetails.personalDetails.primaryEmail"
+
+
+
+  //ES
+  val sb_es_user_profile_index:String=config.getString("ES.sb_es_user_profile_index")
+  val es_profile_index_type:String=config.getString("ES.es_profile_index_type")
 
   // Consumers
   val LatestCourseReminderEmailConsumer = "latest-course-reminder-email-consumer"

@@ -1,14 +1,18 @@
 package org.sunbird.latestCourse.reminder.functions
 
 import com.datastax.driver.core.querybuilder.QueryBuilder
+import org.elasticsearch.index.query._
 import com.google.gson.Gson
-import org.apache.commons.collections.MapUtils
+import org.apache.commons.collections.{CollectionUtils, MapUtils}
 import org.apache.commons.lang3.StringUtils
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.ProcessFunction
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 import org.apache.kafka.common.serialization.StringSerializer
+import org.elasticsearch.action.search.SearchResponse
+import org.elasticsearch.search.{SearchHit, SearchHits}
+import org.elasticsearch.search.builder.SearchSourceBuilder
 import org.slf4j.LoggerFactory
 import org.sunbird.dp.contentupdater.core.util.RestUtil
 import org.sunbird.dp.core.cache.{DataCache, RedisConnect}
@@ -16,7 +20,7 @@ import org.sunbird.dp.core.job.{BaseProcessFunction, Metrics}
 import org.sunbird.dp.core.util.CassandraUtil
 import org.sunbird.latestCourse.reminder.domain.Event
 import org.sunbird.latestCourse.reminder.task.LatestCourseReminderEmailConfig
-import org.sunbird.latestCourse.reminder.util.RestApiUtil
+import org.sunbird.latestCourse.reminder.util.{IndexService, RestApiUtil}
 
 import java.time.LocalDate
 import java.util
@@ -105,7 +109,7 @@ class latestCourseReminderEmailFunction(config: LatestCourseReminderEmailConfig,
     if(newCourseData!=null && newCourseData.result.content.size()>=config.latest_courses_alert_content_min_limit){
       val coursesDataMapList:util.List[CoursesDataMap]= setCourseMap(newCourseData.result.content)
       if(sendNewCourseEmail(coursesDataMapList)){
-        updateEmailRecordInTheDatabase();
+        //updateEmailRecordInTheDatabase();
       }
     }else{
       logger.info("There are no latest courses or number of latest courses are less than "+config.latest_courses_alert_content_min_limit)
@@ -181,7 +185,7 @@ class latestCourseReminderEmailFunction(config: LatestCourseReminderEmailConfig,
   def setCourseMap(courseList: util.List[Content]): util.List[CoursesDataMap] = {
     logger.info("Entering setCourseMap")
     val coursesDataMapList=new util.ArrayList[CoursesDataMap]()
-    for(i<- 0 to courseList.size() if i < config.new_courses_email_limit){
+    for(i<- 0 to courseList.size()-1 if i < config.new_courses_email_limit){
       try{
         val Id: String = courseList.get(i).identifier
         if(!StringUtils.isEmpty(courseList.get(i).identifier) && !StringUtils.isEmpty(courseList.get(i).name) && !StringUtils.isEmpty(courseList.get(i).posterImage) && !StringUtils.isEmpty(courseList.get(i).duration)){
@@ -207,7 +211,7 @@ class latestCourseReminderEmailFunction(config: LatestCourseReminderEmailConfig,
       logger.info("Entering new courses email")
       val params=new util.HashMap[String,Any]()
       params.put(config.NO_OF_COURSES,coursesDataMapList.size())
-      for(i<- 0 to coursesDataMapList.size() if i < config.new_courses_email_limit){
+      for(i<- 0 to coursesDataMapList.size()-1 if i < config.new_courses_email_limit){
         val j:Int=i+1;
         params.put(config.COURSE_KEYWORD + j,true)
         params.put(config.COURSE_KEYWORD + j +config._URL,coursesDataMapList.get(i).courseUrl)
@@ -282,85 +286,152 @@ class latestCourseReminderEmailFunction(config: LatestCourseReminderEmailConfig,
     return true
   }
 
-  def fetchEmailIdsFromUserES(excludeEmailsList: util.List[Any],params:util.Map[String,Any]): Boolean = {
+  /* def fetchEmailIdsFromUserES(excludeEmailsList: util.List[Any],params:util.Map[String,Any]): Boolean = {
+     logger.info("Entering fetchEmailIdsFromUserES")
+     try{
+       var count: Int = 1
+       val limit: Int = 45
+       val filters=new util.HashMap[String,Any]()
+       filters.put(config.STATUS,1)
+       filters.put(config.IS_DELETED,false)
+       val searchFields=config.EMAIL_SEARCH_FIELDS
+       val request=new util.HashMap[String,Any]()
+       request.put(config.FILTERS,filters)
+       request.put(config.LIMIT,limit)
+       request.put(config.FIELDS, searchFields.split(",", -1))
+       val requestBody=new util.HashMap[String,Any]()
+       requestBody.put(config.REQUEST,request)
+       val headersValue=new util.HashMap[String,Any]()
+       headersValue.put(config.CONTENT_TYPE,config.APPLICATION_JSON)
+       headersValue.put(config.AUTHORIZATION,config.SB_API_KEY)
+       var response=new util.HashMap[String,Any]()
+       val url=config.SB_SERVICE_URL+config.SUNBIRD_USER_SEARCH_ENDPOINT
+       var offset:Int=0
+       while (offset<count){
+         val emails=new util.ArrayList[String]()
+         request.put(config.OFFSET,offset)
+         val responseString=restApiUtil.postRequestForSearchUser(url,requestBody,headersValue)
+         val gson =new Gson()
+         response=gson.fromJson(responseString,classOf[util.HashMap[String,Any]])
+         if(response!=null && config.OK.equalsIgnoreCase(response.get(config.RESPONSE_CODE).toString)) {
+           val map: util.Map[String, Any] = response.get(config.RESULT).asInstanceOf[util.Map[String, Any]]
+           if (map.get(config.RESPONSE) != null) {
+             val responseObj: util.Map[String, Any] = map.get(config.RESPONSE).asInstanceOf[util.Map[String, Any]]
+             val contents: util.List[util.Map[String, Any]] = responseObj.get(config.CONTENT).asInstanceOf[util.List[util.Map[String, Any]]]
+             if (offset == 0) {
+               val c = responseObj.get(config.COUNT).asInstanceOf[Double]
+               count = c.toInt
+             }
+             for (i <- 0 to contents.size()-1) {
+               val content = new util.HashMap[String, Any]
+               content.putAll(contents.get(i))
+               if (content.containsKey(config.PROFILE_DETAILS)) {
+                 val profileDetails: util.Map[String, Any] = content.get(config.PROFILE_DETAILS).asInstanceOf[util.Map[String, Any]]
+                 if (profileDetails.containsKey(config.PERSONAL_DETAILS)) {
+                   val personalDetails: util.Map[String, Any] = profileDetails.get(config.PERSONAL_DETAILS).asInstanceOf[util.Map[String, Any]]
+                   if (MapUtils.isNotEmpty(personalDetails)) {
+                     val email = personalDetails.get(config.PRIMARY_EMAIL).toString
+                     //TODO-If condition need to check
+                     if(StringUtils.isNotBlank(email) && !excludeEmailsList.contains(email)){
+                       if (config.MAIL_LIST != null && !config.MAIL_LIST.contains(email)) {
+                         emails.add(email)
+                       } else {
+                         logger.info("Invalid Email :" + personalDetails.get(config.PRIMARY_EMAIL))
+                       }
+                     }
+                   }
+                 }
+               }
+             }
+           }
+         }
+         val kafkaProducerProps=new Properties()
+         kafkaProducerProps.put("bootstrap.servers",config.BOOTSTRAP_SERVER_CONFIG)
+         kafkaProducerProps.put("key.serializer",classOf[StringSerializer].getName)
+         kafkaProducerProps.put("value.serializer",classOf[StringSerializer].getName)
+         val producer=new KafkaProducer[String,String](kafkaProducerProps)
+         val producerData=new util.HashMap[String,Any]
+         producerData.put(config.EMAILS,emails)
+         producerData.put(config.PARAMS,params)
+         producerData.put(config.emailTemplate,config.NEW_COURSES)
+         producerData.put(config.emailSubject,config.NEW_COURSES_MAIL_SUBJECT)
+         producer.send(new ProducerRecord[String,String](config.kafkaOutPutStreamTopic,config.DATA,producerData.toString))
+         /*producer.flush()
+         producer.close()*/
+         /* CompletableFuture.runAsync(()=>{
+            //sendNotification(emails,params,config.SENDER_MAIL,config.notification_service_host+config.notification_event_endpoint,config.NEW_COURSES,config.NEW_COURSES_MAIL_SUBJECT)
+          })*/
+         offset += limit
+         logger.info("offset in last "+offset)
+       }
+     }catch {
+       case e: Exception => e.printStackTrace()
+         logger.info(String.format("Failed during fetching mail %s", e.getMessage()))
+         return false
+     }
+     return true
+   }*/
+
+  def fetchEmailIdsFromUserES(excludeEmailsList: util.List[Any], params: util.Map[String, Any]): Boolean = {
+    val resultArray=new util.ArrayList[util.HashMap[String,Any]]
+    var result=new util.HashMap[String,Any]()
     logger.info("Entering fetchEmailIdsFromUserES")
-    try{
+    try {
       var count: Int = 1
       val limit: Int = 45
-      val filters=new util.HashMap[String,Any]()
-      filters.put(config.STATUS,1)
-      filters.put(config.IS_DELETED,false)
-      val searchFields=config.EMAIL_SEARCH_FIELDS
-      val request=new util.HashMap[String,Any]()
-      request.put(config.FILTERS,filters)
-      request.put(config.LIMIT,limit)
-      request.put(config.FIELDS, searchFields.split(",", -1))
-      val requestBody=new util.HashMap[String,Any]()
-      requestBody.put(config.REQUEST,request)
-      val headersValue=new util.HashMap[String,Any]()
-      headersValue.put(config.CONTENT_TYPE,config.APPLICATION_JSON)
-      headersValue.put(config.AUTHORIZATION,config.SB_API_KEY)
-      var response=new util.HashMap[String,Any]()
-      val url=config.SB_SERVICE_URL+config.SUNBIRD_USER_SEARCH_ENDPOINT
-      var offset:Int=0
-      while (offset<count){
-        val emails=new util.ArrayList[String]()
-        request.put(config.OFFSET,offset)
-        val responseString=restApiUtil.postRequestForSearchUser(url,requestBody,headersValue)
-        val gson =new Gson()
-        response=gson.fromJson(responseString,classOf[util.HashMap[String,Any]])
-        if(response!=null && config.OK.equalsIgnoreCase(response.get(config.RESPONSE_CODE).toString)) {
-          val map: util.Map[String, Any] = response.get(config.RESULT).asInstanceOf[util.Map[String, Any]]
-          if (map.get(config.RESPONSE) != null) {
-            val responseObj: util.Map[String, Any] = map.get(config.RESPONSE).asInstanceOf[util.Map[String, Any]]
-            val contents: util.List[util.Map[String, Any]] = responseObj.get(config.CONTENT).asInstanceOf[util.List[util.Map[String, Any]]]
-            if (offset == 0) {
-              val c = responseObj.get(config.COUNT).asInstanceOf[Double]
-              count = c.toInt
-            }
-            for (i <- 0 to contents.size()-1) {
-              val content = new util.HashMap[String, Any]
-              content.putAll(contents.get(i))
-              if (content.containsKey(config.PROFILE_DETAILS)) {
-                val profileDetails: util.Map[String, Any] = content.get(config.PROFILE_DETAILS).asInstanceOf[util.Map[String, Any]]
-                if (profileDetails.containsKey(config.PERSONAL_DETAILS)) {
-                  val personalDetails: util.Map[String, Any] = profileDetails.get(config.PERSONAL_DETAILS).asInstanceOf[util.Map[String, Any]]
-                  if (MapUtils.isNotEmpty(personalDetails)) {
-                    val email = personalDetails.get(config.PRIMARY_EMAIL).toString
-                    //TODO-If condition need to check
-                    if(StringUtils.isNotBlank(email) && !excludeEmailsList.contains(email)){
-                      if (config.MAIL_LIST != null && !config.MAIL_LIST.contains(email)) {
-                        emails.add(email)
-                      } else {
-                        logger.info("Invalid Email :" + personalDetails.get(config.PRIMARY_EMAIL))
-                      }
+      var offset: Int = 0
+      var response=new SearchResponse()
+        while (offset<count){
+          val emails = new util.ArrayList[String]()
+          val query: BoolQueryBuilder = QueryBuilders.boolQuery()
+          val finalQuery: BoolQueryBuilder = QueryBuilders.boolQuery()
+          finalQuery.must(QueryBuilders.matchQuery(config.STATUS, 1))
+            .must(QueryBuilders.matchQuery(config.IS_DELETED, false)).must(query)
+          val sourceBuilder = new SearchSourceBuilder().query(finalQuery)
+          sourceBuilder.fetchSource(config.fields, new String())
+          sourceBuilder.from(offset)
+          sourceBuilder.size(45)
+          val index = new IndexService()
+          response= index.getEsResult(config.sb_es_user_profile_index, config.es_profile_index_type, sourceBuilder, true)
+          for (i <- 1 to response.getHits.getHits.length-1) {
+            val hit: SearchHit = response.getHits().getAt(i)
+            result = hit.getSourceAsMap().asInstanceOf[util.HashMap[String, Any]]
+            if (result.containsKey(config.PROFILE_DETAILS)) {
+              val profileDetails: util.HashMap[String, Any] = result.get(config.PROFILE_DETAILS).asInstanceOf[util.HashMap[String, Any]]
+              if (profileDetails.containsKey(config.PERSONAL_DETAILS)) {
+                val personalDetails: util.HashMap[String, Any] = profileDetails.get(config.PERSONAL_DETAILS).asInstanceOf[util.HashMap[String, Any]]
+                if (MapUtils.isNotEmpty(personalDetails)) {
+                  val email: String = personalDetails.get(config.PRIMARY_EMAIL).asInstanceOf[String]
+                  if (StringUtils.isNotBlank(email) && !excludeEmailsList.contains(email)) {
+                    if (config.MAIL_LIST != null && !config.MAIL_LIST.contains(email)) {
+                      emails.add(email)
+                    } else {
+                      logger.info("Invalid Email :" + email)
                     }
                   }
                 }
               }
             }
           }
-        }
-        val kafkaProducerProps=new Properties()
-        kafkaProducerProps.put("bootstrap.servers",config.BOOTSTRAP_SERVER_CONFIG)
-        kafkaProducerProps.put("key.serializer",classOf[StringSerializer].getName)
-        kafkaProducerProps.put("value.serializer",classOf[StringSerializer].getName)
-        val producer=new KafkaProducer[String,String](kafkaProducerProps)
-        val producerData=new util.HashMap[String,Any]
-        producerData.put(config.EMAILS,emails)
-        producerData.put(config.PARAMS,params)
-        producerData.put(config.emailTemplate,config.NEW_COURSES)
-        producerData.put(config.emailSubject,config.NEW_COURSES_MAIL_SUBJECT)
-        producer.send(new ProducerRecord[String,String](config.kafkaOutPutStreamTopic,config.DATA,producerData.toString))
-        /*producer.flush()
-        producer.close()*/
-        /* CompletableFuture.runAsync(()=>{
-           //sendNotification(emails,params,config.SENDER_MAIL,config.notification_service_host+config.notification_event_endpoint,config.NEW_COURSES,config.NEW_COURSES_MAIL_SUBJECT)
-         })*/
+          if(CollectionUtils.isNotEmpty(emails)){
+            val kafkaProducerProps = new Properties()
+            kafkaProducerProps.put("bootstrap.servers", config.BOOTSTRAP_SERVER_CONFIG)
+            kafkaProducerProps.put("key.serializer", classOf[StringSerializer].getName)
+            kafkaProducerProps.put("value.serializer", classOf[StringSerializer].getName)
+            val producer = new KafkaProducer[String, String](kafkaProducerProps)
+            val producerData = new util.HashMap[String, Any]
+            producerData.put(config.EMAILS, emails)
+            producerData.put(config.PARAMS, params)
+            producerData.put(config.emailTemplate, config.NEW_COURSES)
+            producerData.put(config.emailSubject, config.NEW_COURSES_MAIL_SUBJECT)
+            producer.send(new ProducerRecord[String, String](config.kafkaOutPutStreamTopic, config.DATA, producerData.toString))
+          }
         offset += limit
-        logger.info("offset in last "+offset)
+        count = response.getHits.getTotalHits.toInt
+        logger.info("count at last " + count)
+        logger.info("offset in last " + offset)
       }
-    }catch {
+    } catch {
       case e: Exception => e.printStackTrace()
         logger.info(String.format("Failed during fetching mail %s", e.getMessage()))
         return false
