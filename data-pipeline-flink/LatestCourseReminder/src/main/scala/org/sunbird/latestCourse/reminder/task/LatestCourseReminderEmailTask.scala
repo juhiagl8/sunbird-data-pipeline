@@ -42,7 +42,7 @@ class LatestCourseReminderEmailTask(config: LatestCourseReminderEmailConfig, kaf
 
 object LatestCourseReminderEmailTask {
   def main(args: Array[String]): Unit = {
-    val configFilePath = Option(ParameterTool.fromArgs(args).get("config.file.path"))
+    val configFilePath = Option(ParameterTool.fromArgs(args).get("courseConfig.file.path"))
     val config = configFilePath.map {
       path => ConfigFactory.parseFile(new File(path)).resolve()
     }.getOrElse(ConfigFactory.load("latestCourseReminder.conf").withFallback(ConfigFactory.systemEnvironment()))

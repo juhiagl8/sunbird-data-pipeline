@@ -122,14 +122,49 @@ class LatestCourseReminderEmailConfig(override val config: Config) extends BaseJ
   val latest_courses_alert_send_to_all_user:Boolean=config.getBoolean("const.latest_courses_alert_send_to_all_user")
   val DATA="data"
   val emailTemplate="emailTemplate"
+  val TEMPLATE="template"
   val emailSubject="emailSubject"
+  val SUBJECT="subject"
   val fields="profileDetails.personalDetails.primaryEmail"
-
-
-
+  val userId="_id"
+  val IDS="ids"
+  val PREFERENCELIST="notificationPreference.latestCourseAlert"
+  val notificationPreference="notificationPreference"
+  val latestCourseAlert="latestCourseAlert"
+  val BROAD_CAST_TOPIC_NOTIFICATION_MESSAGE = "BroadCast Topic Notification"
+  val ACTOR_TYPE_VALUE = "System"
+  val EID_VALUE = "BE_JOB_REQUEST"
+  val ACTION="action"
+  val BROAD_CAST_TOPIC_NOTIFICATION_KEY = "broadcast-topic-notification-all"
+  val iteration="iteration"
+  val rawData="rawData"
+  val SENDER="sender"
+  val TOPIC="topic"
+  val OTP="otp"
+  val CONFIG="config"
+  val DELIVERY_TYPE="deliveryType"
+  val DELIVERY_MODE="mode"
+  val X_REQUEST_ID = "X-Request-ID"
+  val X_TRACE_ENABLED  = "X-Trace-Enabled"
+  val VER="ver"
+  val ID="id"
+  val PDATA="pdata"
+  val PRODUCER_ID = "NS"
+  val TYPE="type"
+  val OBJECT="object"
+  val TYPE_VALUE = "TopicNotifyAll"
+  val ACTOR="actor"
+  val EDATA="edata"
+  val EID="eid"
+  val TRACE="trace"
+  val CONTEXT="context"
+  val MID="mid"
+  val NOTIFICATION="notification"
   //ES
   val sb_es_user_profile_index:String=config.getString("ES.sb_es_user_profile_index")
   val es_profile_index_type:String=config.getString("ES.es_profile_index_type")
+  val sb_es_user_notification_preference: String = config.getString("ES.sb_es_user_notification_preference")
+  val es_preference_index_type: String = config.getString("ES.es_preference_index_type")
 
   // Consumers
   val LatestCourseReminderEmailConsumer = "latest-course-reminder-email-consumer"
