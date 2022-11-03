@@ -443,6 +443,7 @@ class latestCourseReminderEmailFunction(courseConfig: LatestCourseReminderEmailC
         notification.put(courseConfig.TEMPLATE,template)
         notification.put(courseConfig.IDS,emails)
         request.put(courseConfig.NOTIFICATION,notification)
+        edata.put(courseConfig.REQUEST,request)
         val trace=new util.HashMap[String,Any]()
         trace.put(courseConfig.X_REQUEST_ID,null)
         trace.put(courseConfig.X_TRACE_ENABLED,false)
@@ -466,7 +467,6 @@ class latestCourseReminderEmailFunction(courseConfig: LatestCourseReminderEmailC
           producerData.put(courseConfig.ACTOR,Actor)
           producerData.put(courseConfig.EDATA,edata)
           producerData.put(courseConfig.EID,eid)
-          producerData.put(courseConfig.REQUEST,request)
           producerData.put(courseConfig.TRACE,trace)
           producerData.put(courseConfig.CONTEXT,context)
           producerData.put(courseConfig.MID,mid)
@@ -474,7 +474,8 @@ class latestCourseReminderEmailFunction(courseConfig: LatestCourseReminderEmailC
           val mapper:ObjectMapper= new ObjectMapper() with ScalaObjectMapper
           mapper.setVisibility(PropertyAccessor.ALL, Visibility.ANY)
           val jsonString=mapper.writeValueAsString(producerData)
-          producer.send(new ProducerRecord[String, String](courseConfig.kafkaOutPutStreamTopic, courseConfig.DATA, jsonString))
+          logger.info("json String "+jsonString)
+          //producer.send(new ProducerRecord[String, String](courseConfig.kafkaOutPutStreamTopic, courseConfig.DATA, jsonString))
         }
         offset += limit
         count = response.getHits.getTotalHits.toInt

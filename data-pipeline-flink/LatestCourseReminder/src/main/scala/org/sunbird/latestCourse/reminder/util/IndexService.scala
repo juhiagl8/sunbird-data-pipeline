@@ -21,12 +21,9 @@ class IndexService {
       searchRequest.types(esType)
     }
     searchRequest.source(searchSourceBuilder)
-    logger.info("search Request "+searchRequest)
     if (isSunbirdES) {
-      logger.info("sb Client "+sbClient.search(searchRequest, RequestOptions.DEFAULT))
       sbClient.search(searchRequest, RequestOptions.DEFAULT)
     } else {
-      logger.info("es Client "+esClient.search(searchRequest, RequestOptions.DEFAULT))
       esClient.search(searchRequest, RequestOptions.DEFAULT)
     }
   }
