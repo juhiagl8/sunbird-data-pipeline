@@ -14,6 +14,10 @@ import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.ProcessFunction
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 import org.apache.kafka.common.serialization.StringSerializer
+import org.apache.velocity.{Template, VelocityContext}
+import org.apache.velocity.app.{Velocity, VelocityEngine}
+import org.apache.velocity.runtime.RuntimeConstants
+import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader
 import org.elasticsearch.action.search.SearchResponse
 import org.elasticsearch.search.{SearchHit, SearchHits}
 import org.elasticsearch.search.builder.SearchSourceBuilder
@@ -24,12 +28,14 @@ import org.sunbird.dp.core.job.{BaseProcessFunction, Metrics}
 import org.sunbird.dp.core.util.CassandraUtil
 import org.sunbird.latestCourse.reminder.domain.Event
 import org.sunbird.latestCourse.reminder.task.LatestCourseReminderEmailConfig
-import org.sunbird.latestCourse.reminder.util.{IndexService, RestApiUtil}
+import org.sunbird.latestCourse.reminder.util.{IndexService, ReadValue, RestApiUtil}
 
+import java.io.StringWriter
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.time.LocalDate
 import java.util
+import java.util.Map.Entry
 import java.util.concurrent.CompletableFuture
 import java.util.{Arrays, Collections, Date, Properties, UUID}
 
@@ -54,9 +60,9 @@ class latestCourseReminderEmailFunction(courseConfig: LatestCourseReminderEmailC
   case class CoursesDataMap(courseId:String,courseName:String,thumbnail:String,courseUrl:String,duration:Int,description:String)
 
 
-  case class Notification(mode: String, deliveryType: String, config: EmailConfig, ids: java.util.List[String], template: Template)
+  case class Notification(mode: String, deliveryType: String, config: EmailConfig, ids: java.util.List[String], template: Templates)
 
-  case class Template(data: String, id: String, params: java.util.Map[String, Any])
+  case class Templates(data: String, id: String, params: java.util.Map[String, Any])
 
   case class EmailConfig(sender: String, subject: String)
 
@@ -434,14 +440,24 @@ class latestCourseReminderEmailFunction(courseConfig: LatestCourseReminderEmailC
         config.put(courseConfig.TOPIC,null)
         config.put(courseConfig.OTP,null)
         config.put(courseConfig.SUBJECT,courseConfig.NEW_COURSES_MAIL_SUBJECT)
-        val template=Template(data = null, id = courseConfig.NEW_COURSES_EMAIL, params = params)
+        //var template=Templates(data = null, id = courseConfig.NEW_COURSES_EMAIL, params = params)
+
+        val templates=new util.HashMap[String,Any]()
+        templates.put(courseConfig.DATA,null)
+        templates.put(courseConfig.ID,courseConfig.NEW_COURSES_EMAIL)
+        templates.put(courseConfig.PARAMS,params)
+        logger.info("templates "+templates)
+
         val notification = new util.HashMap[String, Any]()
         notification.put(courseConfig.rawData, null)
         notification.put(courseConfig.CONFIG, config)
         notification.put(courseConfig.DELIVERY_TYPE, courseConfig.MESSAGE)
         notification.put(courseConfig.DELIVERY_MODE, courseConfig.EMAIL)
-        notification.put(courseConfig.TEMPLATE,template)
+        notification.put(courseConfig.TEMPLATE,templates)
         notification.put(courseConfig.IDS,emails)
+
+        logger.info("notification "+notification)
+
         request.put(courseConfig.NOTIFICATION,notification)
         edata.put(courseConfig.REQUEST,request)
         val trace=new util.HashMap[String,Any]()
@@ -457,6 +473,19 @@ class latestCourseReminderEmailFunction(courseConfig: LatestCourseReminderEmailC
         val objectsDetails=new util.HashMap[String,Any]()
         objectsDetails.put(courseConfig.ID,getRequestHashed(request, context))
         objectsDetails.put(courseConfig.TYPE,courseConfig.TYPE_VALUE)
+
+        var message=new String()
+        logger.info("failed conversion of null")
+        if(notification.get(courseConfig.TEMPLATE)!=null && templates.get(courseConfig.DATA)!=null){
+          logger.info("Entering If block")
+          message= getDataMessage(templates.get(courseConfig.DATA).toString,templates.get(courseConfig.PARAMS).asInstanceOf[util.Map[String,Any]],context)
+          templates.put(courseConfig.DATA,message)
+        }else if (templates.get(courseConfig.ID) != null && notification.get(courseConfig.TEMPLATE)!=null) {
+          logger.info("Entering Else If block")
+          val dataString = createNotificationBody(templates, context)
+          templates.put(courseConfig.DATA,dataString)
+        }
+
         if(CollectionUtils.isNotEmpty(emails)){
           val kafkaProducerProps = new Properties()
           kafkaProducerProps.put("bootstrap.servers", courseConfig.BOOTSTRAP_SERVER_CONFIG)
@@ -509,6 +538,94 @@ class latestCourseReminderEmailFunction(courseConfig: LatestCourseReminderEmailC
         value= ""
     }
     value
+  }
+
+
+  def createNotificationBody(template: util.HashMap[String,Any], context: util.HashMap[String, Any]):String = {
+    logger.info("Entering createNotificationBody")
+    readVm(template.get(courseConfig.ID).toString, template.get(courseConfig.PARAMS).asInstanceOf[util.HashMap[String,Any]], context);
+  }
+
+  def readVm(templateName: String, node: util.Map[String, Any], reqContext: util.HashMap[String, Any]): String = {
+    logger.info("Entering readVm")
+    val engine:VelocityEngine=new VelocityEngine()
+    val context: VelocityContext=getContextObj(node)
+    val props: Properties=new Properties()
+    //props.setProperty("resource.loader","class")
+   /* props.setProperty("file.resource.loader.path", "org/sunbird/latestCourse/reminder/template");
+    props.setProperty("class.resource.loader.class","org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader")*/
+   /* engine.setProperty(RuntimeConstants.RESOURCE_LOADER, "classpath");
+    engine.setProperty("classpath.resource.loader.class", classOf[ClasspathResourceLoader].getName());*/
+    props.setProperty("resource.loader", "class");
+    props.setProperty("class.resource.loader.class", "org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader");
+    var writer: StringWriter=null
+    var body=new String()
+    val TEMPLATE_SUFFIX=".vm"
+    try{
+      engine.init(props)
+      val templates:Template=engine.getTemplate("templates/" +templateName+TEMPLATE_SUFFIX)
+      writer=new StringWriter()
+      templates.merge(context,writer)
+      body=writer.toString
+    }catch {
+      case e: Exception => e.printStackTrace()
+        logger.error(reqContext+" Failed to load velocity template =" + templateName)
+    }finally {
+      if (writer!=null){
+        try{
+          writer.close()
+        }catch {
+          case e:Exception=>e.printStackTrace()
+            logger.error("Failed to closed writer object ="+e.getMessage)
+        }
+      }
+    }
+    logger.info("Body from readVM "+body)
+    body
+  }
+
+  def getContextObj(node: util.Map[String, Any]): VelocityContext = {
+    logger.info("Entering getContextObject")
+    val util=new ReadValue()
+    var context : VelocityContext=null
+    if(node!=null){
+      context=new VelocityContext(node)
+    }else{
+      context=new VelocityContext()
+    }
+    if(!context.containsKey(courseConfig.FROM_EMAIL)){
+      context.put(courseConfig.FROM_EMAIL,courseConfig.sunbird_mail_server_from_email)
+    }
+    if(!context.containsKey(courseConfig.orgImageUrl)){
+      context.put(courseConfig.orgImageUrl,courseConfig.sunbird_mail_server_from_email)
+    }
+    logger.info("context object "+context)
+    context
+  }
+
+  def getDataMessage(message: String, node: util.Map[String, Any], reqContext: util.HashMap[String, Any]): String = {
+    logger.info("Entering getDataMessage")
+    val context:VelocityContext=new VelocityContext()
+    if(node!=null){
+      val itr:util.Iterator[Entry[String,Any]]=node.entrySet().iterator()
+      while (itr.hasNext){
+        val entry:Entry[String,Any]=itr.next()
+        if(null!=entry.getValue()){
+          context.put(entry.getKey,entry.getValue)
+        }
+      }
+    }
+    var writer :StringWriter=null
+    try{
+      Velocity.init()
+      writer=new StringWriter()
+      Velocity.evaluate(context,writer,"SimpleVelocity",message)
+    }catch {
+      case e:Exception=>e.printStackTrace()
+        logger.error("NotificationRouter:getMessage : Exception occurred with message ="+e.getMessage)
+    }
+    logger.info("Writer Object "+writer.toString)
+    writer.toString
   }
 
 
@@ -607,7 +724,7 @@ class latestCourseReminderEmailFunction(courseConfig: LatestCourseReminderEmailC
       override def run(): Unit = {
         try {
           val notificationTosend: java.util.List[Any] = new java.util.ArrayList[Any](java.util.Arrays.asList(new Notification(courseConfig.EMAIL, courseConfig.MESSAGE, new EmailConfig(sender = senderMail, subject = emailSubject),
-            ids = sendTo, new Template(data = null, id = emailTemplate, params = params))));
+            ids = sendTo, new Templates(data = null, id = emailTemplate, params = params))));
           val notificationRequest: java.util.Map[String, Any] = new java.util.HashMap[String, Any]()
           notificationRequest.put(courseConfig.REQUEST, new java.util.HashMap[String, java.util.List[Any]]() {
             {

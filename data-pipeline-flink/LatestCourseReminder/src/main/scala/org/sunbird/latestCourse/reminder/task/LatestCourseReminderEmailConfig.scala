@@ -58,7 +58,7 @@ class LatestCourseReminderEmailConfig(override val config: Config) extends BaseJ
   val SEARCH_FIELDS: String = config.getString{"fields.search_fields"}
   val MIN = "min"
   val EMAIL_TYPE = "emailtype"
-  val NEW_COURSES_EMAIL = "New Courses Email"
+  val NEW_COURSES_EMAIL = "newcourses"
   val LAST_SENT_DATE = "lastsentdate"
   val MAX = "max"
   val PRIMARY_CATEGORY = "primaryCategory"
@@ -160,12 +160,15 @@ class LatestCourseReminderEmailConfig(override val config: Config) extends BaseJ
   val CONTEXT="context"
   val MID="mid"
   val NOTIFICATION="notification"
+  val FROM_EMAIL = "fromEmail"
+  val orgImageUrl="orgImageUrl"
   //ES
   val sb_es_user_profile_index:String=config.getString("ES.sb_es_user_profile_index")
   val es_profile_index_type:String=config.getString("ES.es_profile_index_type")
   val sb_es_user_notification_preference: String = config.getString("ES.sb_es_user_notification_preference")
   val es_preference_index_type: String = config.getString("ES.es_preference_index_type")
 
+  val sunbird_mail_server_from_email= "support@igot-dev.in"
   // Consumers
   val LatestCourseReminderEmailConsumer = "latest-course-reminder-email-consumer"
 

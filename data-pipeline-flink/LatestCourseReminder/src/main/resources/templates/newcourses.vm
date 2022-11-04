@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>igot Template</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato&family=Montserrat:wght@400;600&display=swap"
+        rel="stylesheet">
+    <style>
+        .main-div {
+            width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            display: block;
+            padding: 20px 20px;
+            box-sizing: border-box;
+            background-color: #fff;
+        }
+
+        .content-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            flex-direction: row;
+            width: 100%;
+            height: 100%;
+        }
+
+        .heading-text {
+            font: 600 32px/48px 'Montserrat';
+            margin-top: 0;
+            margin-bottom: 0px;
+        }
+
+        .main-text {
+            font: 600 16px/24px 'Montserrat';
+            margin-top: 0;
+            margin-bottom: 0;
+        }
+
+        .heading-table {
+            width: 100%;
+        }
+
+        .margin-top-40 {
+            margin-top: 40px;
+        }
+
+        .content-box {
+            width: 270px;
+            height: 210px;
+            margin-bottom: 30px;
+            overflow: hidden;
+            border-radius: 0px;
+        }
+
+        .image-box {
+            width: 100%;
+            height: 155px;
+            text-align: center;
+            object-fit: cover;
+            object-position: center;
+            overflow: hidden;
+        }
+
+        .image-box img {
+            height: 100%;
+            width: 100%;
+        }
+
+        .content-text-box {
+            height: calc(100% - 155px);
+            width: 100%;
+            padding-top: 10px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .course-duration {
+            width: 100%;
+            color: rgba(0, 0, 0, .6);
+            font: 400 14px/20px Lato;
+            text-align: left;
+            margin-bottom: 0;
+        }
+
+        .course-name {
+            font: 700 14px/20px Lato;
+            width: 100%;
+            color: rgba(0, 0, 0, .87);
+            text-align: left;
+            margin-bottom: 4px;
+            margin-top: 0;
+        }
+
+        .header-inner-box {
+            width: 100%;
+            display: flex;
+            flex-direction: row;
+            overflow: hidden;
+        }
+
+        .left-logo-box {
+            width: 100%;
+        }
+
+        .banner-section {
+            width: 100%;
+            overflow: hidden;
+            object-fit: cover;
+            object-position: center;
+            margin: 20px auto 0 auto;
+
+        }
+
+        .banner-section img {
+            width: 100%;
+            height: 100%;
+
+        }
+
+        .view-btn {
+            display: block;
+            width: 140px;
+            height: 40px;
+            text-align: center;
+            margin-left: auto;
+            margin-right: auto;
+            border-radius: 4px 4px;
+            background-color: #0074b6;
+            color: #fff !important;
+            text-decoration: none !important;
+            font: 700 14px/20px Lato;
+            padding: 10px 0;
+            box-sizing: border-box;
+        }
+
+        .mb-24 {
+            margin-bottom: 24px;
+        }
+
+        .mt-24 {
+            margin-top: 24px;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        .mr-20 {
+            margin-right: 20px;
+        }
+
+        .button-box {
+            width: 150px;
+            margin-left: 225px;
+        }
+
+        .text-box {
+            /*z-index: 99999;
+            position: absolute;
+             margin-top: 80px;
+            top: 37%; */
+            width: 240px;
+
+            margin-left: 40px;
+            color: #fff;
+        }
+
+        .text-box h5.medium-font {
+            margin-top: 0;
+            margin-bottom: 4px;
+            font: 600 20px/28px 'Montserrat';
+        }
+
+        .text-box h4.large-font {
+            margin-top: 0;
+            margin-bottom: 0;
+            font: 600 32px/38px 'Montserrat';
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .table-box,
+        .card-text-table {
+            display: table;
+            width: 100%;
+        }
+
+        /*--- Preheader declaration in style block in addition to inline for Outlook */
+
+
+        .preheader {
+            display: none !important;
+            visibility: hidden;
+            opacity: 0;
+            color: transparent;
+            height: 0;
+            width: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-div">
+        <span class="preheader"
+            style="display: none !important; visibility: hidden; opacity: 0; color: transparent; height: 0; width: 0;">Your
+            weekly learning update is here, have a look.............</span>
+        <header>
+            <div class="header-inner-box">
+                <div class="left-logo-box">
+                    <img src="https://igot.blob.core.windows.net/public/emailimagecombained/All-logos.png">
+                    <!-- <img src="https://igot.blob.core.windows.net/public/emailimageseparate/iGOT_Logo.png" /> -->
+                </div>
+                <!-- <div class="right-logo-box">
+                    <img src="https://igot.blob.core.windows.net/public/emailimagecombained/dopt_kb.png">
+                </div> -->
+            </div>
+
+        </header>
+        <div class="banner-section">
+            <img src="https://www.igot-dev.in/img/sliderImg1.jpg">
+
+        </div>
+        <div class="content-main-section">
+            <div class="table-box" style="margin-top:40px;">
+                <table class="heading-table">
+                    <tbody>
+                        <tr>
+                            <td>
+                                <h2 class="heading-text text-center">Stay on top with new skills</h2>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <h4 class="main-text text-center" style="color:rgba(0, 0, 0, 0.6);">We have published
+                                    $noOfCourses new courses this week.</h4>
+                            </td>
+                        </tr>
+
+                    </tbody>
+                </table>
+            </div>
+            <div class="button-box" style="margin-top:20px; margin-bottom:60px;">
+                <a href="https://portal.igot-dev.in/app/globalsearch?tab=Learn&q=&p=Trending&f=%7B%22primaryCategory%22:%20%5B%22Course%22%5D,%20%22contentType%22:%20%5B%22Course%22%5D%7D"
+                    class="button view-btn" target="_blank">View all courses</a>
+            </div>
+            <h4 class="main-text">Checkout the courses:</h4>
+            <div class="content-inner">
+                <table>
+                    <tr>
+                        <td colspan="2">
+                            #if ($course1)
+                            <a href='$course1_url' target="_blank">
+                                <div class="content-box mr-20">
+                                    <div class="image-box">
+                                        <img src="$course1_thumbnail">
+                                    </div>
+                                    <div class="content-text-box">
+                                        <table class="card-text-table">
+                                            <tbody>
+                                                <tr>
+                                                    <td>
+                                                        <p class="course-name">$course1_name</p>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td><span class="course-duration">$course1_duration</span></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </a>
+                            #end
+                        </td>
+                        <td colspan="2">
+                            #if ($course2)
+                            <a href='$course2_url' target="_blank">
+                                <div class="content-box">
+                                    <div class="image-box">
+                                        <img src="$course2_thumbnail">
+                                    </div>
+                                    <div class="content-text-box">
+                                        <table class="card-text-table">
+                                            <tbody>
+                                                <tr>
+                                                    <td>
+                                                        <p class="course-name">$course2_name</p>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td><span class="course-duration">$course2_duration</span></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </a>
+                            #end
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">
+                            #if ($course3)
+                            <a href='$course3_url' target="_blank">
+                                <div class="content-box mr-20">
+                                    <div class="image-box">
+                                        <img src="$course3_thumbnail">
+                                    </div>
+                                    <div class="content-text-box">
+                                        <table class="card-text-table">
+                                            <tbody>
+                                                <tr>
+                                                    <td>
+                                                        <p class="course-name">$course3_name</p>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td><span class="course-duration">$course3_duration</span></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </a>
+                            #end
+                        </td>
+                        <td colspan="2">
+                            #if ($course4)
+                            <a href='$course4_url' target="_blank">
+                                <div class="content-box">
+                                    <div class="image-box">
+                                        <img src="$course4_thumbnail">
+                                    </div>
+                                    <div class="content-text-box">
+                                        <table class="card-text-table">
+                                            <tbody>
+                                                <tr>
+                                                    <td>
+                                                        <p class="course-name">$course4_name</p>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td><span class="course-duration">$course4_duration</span></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </a>
+                            #end
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">
+                            #if ($course5)
+                            <a href='$course5_url' target="_blank">
+                                <div class="content-box mr-20">
+                                    <div class="image-box">
+                                        <img src="$course5_thumbnail">
+                                    </div>
+                                    <div class="content-text-box">
+                                        <table class="card-text-table">
+                                            <tbody>
+                                                <tr>
+                                                    <td>
+                                                        <p class="course-name">$course5_name</p>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td><span class="course-duration">$course5_duration</span></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </a>
+                            #end
+                        </td>
+                        <td colspan="2">
+                            #if ($course6)
+                            <a href='$course6_url' target="_blank">
+                                <div class="content-box mr-20">
+                                    <div class="image-box">
+                                        <img src="$course6_thumbnail">
+                                    </div>
+                                    <div class="content-text-box">
+                                        <table class="card-text-table">
+                                            <tbody>
+                                                <tr>
+                                                    <td>
+                                                        <p class="course-name">$course6_name</p>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td><span class="course-duration">$course6_duration</span></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </a>
+                            #end
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">
+                            #if ($course7)
+                            <a href='$course7_url' target="_blank">
+                                <div class="content-box mr-20">
+                                    <div class="image-box">
+                                        <img src="$course7_thumbnail">
+                                    </div>
+                                    <div class="content-text-box">
+                                        <table class="card-text-table">
+                                            <tbody>
+                                                <tr>
+                                                    <td>
+                                                        <p class="course-name">$course7_name</p>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td><span class="course-duration">$course7_duration</span></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </a>
+                            #end
+                        </td>
+                        <td colspan="2">
+                            #if ($course8)
+                            <a href='$course8_url' target="_blank">
+                                <div class="content-box mr-20">
+                                    <div class="image-box">
+                                        <img src="$course8_thumbnail">
+                                    </div>
+                                    <div class="content-text-box">
+                                        <table class="card-text-table">
+                                            <tbody>
+                                                <tr>
+                                                    <td>
+                                                        <p class="course-name">$course8_name</p>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td><span class="course-duration">$course8_duration</span></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </a>
+                            #end
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="4">
+                            <div class="button-box" style="margin-top:0px;">
+                                <a href="https://portal.igot-dev.in/app/globalsearch?tab=Learn&q=&p=Trending&f=%7B%22primaryCategory%22:%20%5B%22Course%22%5D,%20%22contentType%22:%20%5B%22Course%22%5D%7D"
+                                    class="button view-btn mb-24 mt-24" target="_blank">View all courses</a>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+</body>
+
+</html>
