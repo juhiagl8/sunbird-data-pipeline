@@ -1,4 +1,4 @@
-package org.sunbird.latestCourse.reminder.domain
+package org.sunbird.notificationEngine.domain
 
 import org.sunbird.dp.core.domain.{Events, EventsPath}
 

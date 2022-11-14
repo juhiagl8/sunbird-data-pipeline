@@ -1,4 +1,4 @@
-package org.sunbird.latestCourse.reminder.functions
+package org.sunbird.notificationEngine.functions
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -8,8 +8,8 @@ import org.slf4j.LoggerFactory
 import org.sunbird.dp.contentupdater.core.util.RestUtil
 import org.sunbird.dp.core.cache.{DataCache, RedisConnect}
 import org.sunbird.dp.core.job.{BaseProcessFunction, Metrics}
-import org.sunbird.latestCourse.reminder.domain.Event
-import org.sunbird.latestCourse.reminder.task.NotificationEngineEmailConfig
+import org.sunbird.notificationEngine.domain.Event
+import org.sunbird.notificationEngine.task.NotificationEngineEmailConfig
 
 import java.util.concurrent.CompletableFuture
 

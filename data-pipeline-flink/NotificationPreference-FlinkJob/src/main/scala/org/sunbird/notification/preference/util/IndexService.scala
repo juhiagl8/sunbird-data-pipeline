@@ -6,13 +6,14 @@ import org.elasticsearch.action.search.{MultiSearchRequest, SearchRequest, Searc
 import org.elasticsearch.client.{RequestOptions, RestClient, RestHighLevelClient}
 import org.elasticsearch.search.builder.SearchSourceBuilder
 import org.slf4j.LoggerFactory
+import org.sunbird.notification.preference.task.NotificationPreferenceConfig
 
-class IndexService {
+class IndexService(config:NotificationPreferenceConfig) {
   private[this] val logger = LoggerFactory.getLogger(classOf[IndexService])
 
   logger.info("Entering to IndexService ")
-  private var esClient : RestHighLevelClient=new RestHighLevelClient(RestClient.builder(new HttpHost("localhost", 9200 )))
-  private var sbClient : RestHighLevelClient=new RestHighLevelClient(RestClient.builder(new HttpHost("localhost", 9200)))
+  private var esClient : RestHighLevelClient=new RestHighLevelClient(RestClient.builder(new HttpHost(config.ES_HOST, config.ES_PORT.toInt)))
+  private var sbClient : RestHighLevelClient=new RestHighLevelClient(RestClient.builder(new HttpHost(config.ES_HOST, config.ES_PORT.toInt)))
 
   def getEsResult(indexName: String, esType: String, searchSourceBuilder: SearchSourceBuilder, isSunbirdES: Boolean): SearchResponse = {
     val searchRequest = new SearchRequest()
@@ -21,12 +22,9 @@ class IndexService {
       searchRequest.types(esType)
     }
     searchRequest.source(searchSourceBuilder)
-    logger.info("searchRequest "+searchRequest)
     if (isSunbirdES) {
-      logger.info("sbResponse "+sbClient.search(searchRequest, RequestOptions.DEFAULT))
       sbClient.search(searchRequest, RequestOptions.DEFAULT)
     } else {
-      logger.info("esResponse "+esClient.search(searchRequest, RequestOptions.DEFAULT))
       esClient.search(searchRequest, RequestOptions.DEFAULT)
     }
   }

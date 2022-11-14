@@ -11,7 +11,7 @@ import org.sunbird.dp.core.util.FlinkUtil
 import org.sunbird.notification.preference.domain.Event
 import org.sunbird.notification.preference.function.NotificationPreferenceFunction
 
-class NotificationPreferenceTask(config: NotifiationPreferenceConfig, kafkaConnector: FlinkKafkaConnector) {
+class NotificationPreferenceTask(config: NotificationPreferenceConfig, kafkaConnector: FlinkKafkaConnector) {
 
   private val serialVersionUID = -7729362727131516112L
 
@@ -39,7 +39,7 @@ object NotificationPreferenceTask {
     val config = configFilePath.map {
       path => ConfigFactory.parseFile(new File(path)).resolve()
     }.getOrElse(ConfigFactory.load("notificationPreference-config.conf").withFallback(ConfigFactory.systemEnvironment()))
-    val ratingConfig = new NotifiationPreferenceConfig(config)
+    val ratingConfig = new NotificationPreferenceConfig(config)
     val kafkaUtil = new FlinkKafkaConnector(ratingConfig)
     val task = new NotificationPreferenceTask(ratingConfig, kafkaUtil)
     task.process()

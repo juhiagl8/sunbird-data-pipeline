@@ -1,4 +1,4 @@
-package org.sunbird.latestCourse.reminder.task
+package org.sunbird.notificationEngine.task
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -7,8 +7,8 @@ import org.apache.flink.api.java.utils.ParameterTool
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.sunbird.dp.core.job.FlinkKafkaConnector
 import org.sunbird.dp.core.util.FlinkUtil
-import org.sunbird.latestCourse.reminder.domain.Event
-import org.sunbird.latestCourse.reminder.functions.NotificationEngineFunction
+import org.sunbird.notificationEngine.domain.Event
+import org.sunbird.notificationEngine.functions.NotificationEngineFunction
 
 import java.io.File
 

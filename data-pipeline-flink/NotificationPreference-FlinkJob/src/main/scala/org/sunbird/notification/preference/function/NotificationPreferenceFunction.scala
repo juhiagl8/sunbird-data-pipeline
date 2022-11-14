@@ -18,7 +18,7 @@ import org.sunbird.dp.core.cache.DataCache
 import org.sunbird.dp.core.job.{BaseProcessFunction, Metrics}
 import org.sunbird.dp.core.util.{CassandraUtil, JSONUtil}
 import org.sunbird.notification.preference.domain.Event
-import org.sunbird.notification.preference.task.NotifiationPreferenceConfig
+import org.sunbird.notification.preference.task.NotificationPreferenceConfig
 import org.sunbird.notification.preference.util.IndexService
 
 import java.nio.charset.StandardCharsets
@@ -26,7 +26,7 @@ import java.security.MessageDigest
 import java.util
 import java.util.{Properties, UUID}
 
-class NotificationPreferenceFunction(preferenceConfig: NotifiationPreferenceConfig, @transient var cassandraUtil: CassandraUtil = null)(implicit val mapTypeInfo: TypeInformation[Event])
+class NotificationPreferenceFunction(preferenceConfig: NotificationPreferenceConfig, @transient var cassandraUtil: CassandraUtil = null)(implicit val mapTypeInfo: TypeInformation[Event])
   extends BaseProcessFunction[Event, Event](preferenceConfig) {
 
   private[this] val logger = LoggerFactory.getLogger(classOf[NotificationPreferenceFunction])
@@ -50,52 +50,40 @@ class NotificationPreferenceFunction(preferenceConfig: NotifiationPreferenceConf
         val emailWithUserId:util.List[util.HashMap[String,Any]]=event.emailWithUserId
         val userIdList=new util.ArrayList[String]()
         var userId: util.Set[String]=null
-        logger.info("email with UserId "+emailWithUserId)
         emailWithUserId.forEach(data=>{
           userId= data.keySet()
-          logger.info("userId only "+userId)
           userId.forEach(id => {
             userIdList.add(id)
-            logger.info("userId==> " + userIdList)
           })
         })
         var enableEmailList=new util.ArrayList[String]()
         if(CollectionUtils.isNotEmpty(userIdList)) {
           enableEmailList = initiateNotificationPreferenceCheck(userIdList)
         }
-        logger.info("enableEmailList " + enableEmailList)
         val finalEmailList = new util.ArrayList[String]()
 
         if (CollectionUtils.isNotEmpty(enableEmailList) && enableEmailList != null) {
           val toRemove: util.List[String] = new util.ArrayList[String]()
-          logger.info("remove if Block")
           userIdList.forEach(id => {
             if (!enableEmailList.contains(id)) {
               toRemove.add(id)
             }
           })
-          logger.info("to remove userId " + toRemove)
           toRemove.forEach(id => {
             emailWithUserId.forEach(mapObj => {
               mapObj.remove(id)
             })
           })
           if (CollectionUtils.isNotEmpty(emailWithUserId)) {
-            logger.info("if block for adding final email list")
             emailWithUserId.forEach(mapObj => {
               val entryObj = mapObj.entrySet()
-              logger.info("entry data " + entryObj)
               entryObj.forEach(i => {
                 val mail = i.getValue
-                logger.info("mail " + mail)
                 finalEmailList.add(mail.asInstanceOf[String])
               })
             })
           }
         }
-        logger.info("emailWithUserId 2 "+emailWithUserId)
-        logger.info("final Email List "+finalEmailList)
-
         if(CollectionUtils.isNotEmpty(finalEmailList)){
           val emailTemplate = event.emailTemplate
           val emailSubject = event.emailSubject
@@ -114,31 +102,23 @@ class NotificationPreferenceFunction(preferenceConfig: NotifiationPreferenceConf
 
   def initiateNotificationPreferenceCheck(userId: util.ArrayList[String]):util.ArrayList[String] = {
     try {
-      val index = new IndexService()
+      val index = new IndexService(preferenceConfig)
       logger.info("Entering checkNotificationPreferenceByUserId")
-      logger.info("request Object " + userId)
       val query: BoolQueryBuilder = QueryBuilders.boolQuery()
       val finalQuery: BoolQueryBuilder = QueryBuilders.boolQuery()
       finalQuery.must(QueryBuilders.termsQuery(preferenceConfig.USERID, userId)).must(QueryBuilders.termQuery(preferenceConfig.latestCourseAlert,true)).must(query)
-      logger.info("query "+query)
       val sourceBuilder = new SearchSourceBuilder().query(finalQuery)
       sourceBuilder.fetchSource(preferenceConfig.USERID, new String())
       sourceBuilder.from(0)
       sourceBuilder.size(45)
-      logger.info("sourceBuilder " + sourceBuilder)
       val notificationPreferenceResponse = index.getEsResult(preferenceConfig.sb_es_user_notification_preference, preferenceConfig.es_preference_index_type, sourceBuilder, true)
       var preferenceResult = new util.HashMap[String, Any]()
       val enabledUserId = new util.ArrayList[String]
       if(notificationPreferenceResponse.getHits.getTotalHits!=0){
-        logger.info("If hit block")
         notificationPreferenceResponse.getHits.forEach(preferencehitDetails => {
-          logger.info("hit details double hit " + notificationPreferenceResponse.getHits.getHits.toString)
-          logger.info("hit details " + notificationPreferenceResponse.getHits.toString)
           preferenceResult = preferencehitDetails.getSourceAsMap.asInstanceOf[util.HashMap[String, Any]]
-          logger.info("preferenceResult "+preferenceResult)
           if (preferenceResult.containsKey(preferenceConfig.USERID)) {
             enabledUserId.add(preferenceResult.get(preferenceConfig.USERID).asInstanceOf[String])
-            logger.info("enabled UserId "+enabledUserId)
           }
         })
       }
@@ -172,7 +152,6 @@ class NotificationPreferenceFunction(preferenceConfig: NotifiationPreferenceConf
     templates.put(preferenceConfig.DATA, null)
     templates.put(preferenceConfig.ID, emailTemplate)
     templates.put(preferenceConfig.PARAMS, params)
-    logger.info("templates " + templates)
 
     val notification = new util.HashMap[String, Any]()
     notification.put(preferenceConfig.rawData, null)
@@ -181,8 +160,6 @@ class NotificationPreferenceFunction(preferenceConfig: NotifiationPreferenceConf
     notification.put(preferenceConfig.DELIVERY_MODE, preferenceConfig.EMAIL)
     notification.put(preferenceConfig.TEMPLATE, templates)
     notification.put(preferenceConfig.IDS, finalEmailList)
-
-    logger.info("notification " + notification)
 
     request.put(preferenceConfig.NOTIFICATION, notification)
     edata.put(preferenceConfig.REQUEST, request)
@@ -238,14 +215,12 @@ class NotificationPreferenceFunction(preferenceConfig: NotifiationPreferenceConf
     if(MapUtils.isNotEmpty(producerData)){
       val kafkaProducerProps = new Properties()
       kafkaProducerProps.put(preferenceConfig.bootstrap_servers, preferenceConfig.BOOTSTRAP_SERVER_CONFIG)
-      logger.info("failed here 1")
       kafkaProducerProps.put(preferenceConfig.key_serializer, classOf[StringSerializer])
       kafkaProducerProps.put(preferenceConfig.value_serializer, classOf[StringSerializer])
       val producer = new KafkaProducer[String, String](kafkaProducerProps)
       val mapper: ObjectMapper = new ObjectMapper()
       mapper.setVisibility(PropertyAccessor.ALL, Visibility.ANY)
       val jsonString = mapper.writeValueAsString(producerData)
-      logger.info("json String " + jsonString)
       producer.send(new ProducerRecord[String, String](preferenceConfig.NOTIFICATION_JOB_Topic, preferenceConfig.DATA, jsonString))
       logger.info("message Send to kafka")
     }
